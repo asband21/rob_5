@@ -1,36 +1,54 @@
-// Potentiometer Script with angle calibration
+// Potentiometer Script 3.0 with angle calibration and rolling average
 // By Hector Gabriel Fabricius
 
-//Pin connections
+// Pin connections
 #define buttonPin 6 
-int potPin = A0;
+float potPin = A0;
 
-//Variables
-long samples = 0; int angle = 0; int offset = 0;
+// User settings
+int accuracy = 500;
+float samples[500];  // Must be set to the same
 
-//User settings
-int accuracy = 200; // Increasing accuracy decreases sample rate, but reduces flickering in the data. 
-                    // Accuracy to mean sample rate: 10000 ~ 0.8Hz 1000 ~ 8Hz, 100 ~ 80Hz, 10 ~ 800Hz, 1 ~ 8000Hz
+// Variables
+int currentIndex = 0;  // Current index in the samples array
+float angle = 0;
+float offset = 0;
+float sum = 0;
+
 
 void setup() {
-  pinMode(buttonPin, INPUT);}
-void loop() {
-  
- for( int i = 0; i < accuracy; i++) {
-  samples = samples + analogRead(potPin);
- }
- samples = samples / accuracy;
- angle = map(samples, 0, 1023, 0.00, 120.00);
+  pinMode(buttonPin, INPUT);
+  // Initialize the samples array to 0
+  for (int i = 0; i < accuracy; i++) {
+    samples[i] = 0;
+  }
+}
 
- if(digitalRead(buttonPin) == HIGH) {
-  offset = angle;
-  Serial.print("[Calibration mode]    ");
-  Serial.print("Current offset: "); Serial.println(offset);
-  delay(700);
- }
- else{
-  angle = angle - offset;
-  Serial.print("Current angle: "); Serial.println(angle);
- }
- samples = 0;
+void loop() {
+  // Sum of the last 100 samples    
+    // Subtract the oldest value from the sum
+    sum -= samples[currentIndex];
+    
+    // Read the latest value from the potentiometer
+    samples[currentIndex] = analogRead(potPin);
+    
+    // Add the latest value to the sum
+    sum += samples[currentIndex];
+
+    // Move to the next index in the samples array
+    currentIndex = (currentIndex + 1) % accuracy;
+
+  // Calculate the average of the last 100 samples
+  angle = sum / accuracy * 120;
+  angle = angle / 1023 ;
+
+  if (digitalRead(buttonPin) == HIGH) {
+    offset = angle;
+    Serial.print("[Calibration mode]    ");
+    Serial.print("Current offset: "); Serial.println(offset);
+    delay(700);
+  } else {
+    angle = angle - offset;
+    Serial.print("Angle: "); Serial.println(angle);
+  }
 }
