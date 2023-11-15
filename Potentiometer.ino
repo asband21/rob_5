@@ -52,12 +52,13 @@ void loop() {
     delay(700);
   } else {
     angle = angle - offset;
+    if (offset > 90) angle = -angle; // Note that any offset angle above 90 will flip the orientation of the angle system.
     if (angle>=0) {
       if (angle<100) Serial.print('0');
       if (angle<10) Serial.print('0');
       Serial.println(angle);
     } else {
-      if (angle>-100) Serial.print('-'); // Note that any angles < -100, will display as positive.
+      if (angle>-100) Serial.print('-');
       if (angle>-10) Serial.print('0');
       Serial.println(angle * (-1));
     }
