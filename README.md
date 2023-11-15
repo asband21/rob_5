@@ -1,3 +1,4 @@
 # rob_5
- github repo grop 66 Rob 5. 
-Tobias
+ GitHub repository group 66 Rob 5 - Exoskeleton elbow redesign
+
+Tobias, Asbjørn, Hector, Niklas, Tobias & Mads
