@@ -1,5 +1,7 @@
-// Potentiometer Script 3.0 with angle calibration and rolling average
+// Potentiometer Script with angle calibration and rolling average
 // By Hector Gabriel Fabricius
+
+#include <Arduino.h>
 
 // Pin connections
 #define buttonPin 6 
@@ -18,6 +20,7 @@ float sum = 0;
 
 void setup() {
   pinMode(buttonPin, INPUT);
+  Serial.begin(115200);
   // Initialize the samples array to 0
   for (int i = 0; i < accuracy; i++) {
     samples[i] = 0;
@@ -49,6 +52,15 @@ void loop() {
     delay(700);
   } else {
     angle = angle - offset;
-    Serial.print("Angle: "); Serial.println(angle);
+    if (angle>=0) {
+      if (angle<100) Serial.print('0');
+      if (angle<10) Serial.print('0');
+      Serial.println(angle);
+    } else {
+      if (angle>-100) Serial.print('-'); // Note that any angles < -100, will display as positive.
+      if (angle>-10) Serial.print('0');
+      Serial.println(angle * (-1));
+    }
   }
+ // delay(1);
 }
