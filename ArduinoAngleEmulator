@@ -1,0 +1,43 @@
+ //Working from home script. This script emulates the lab setup for the P5 exoskeleton elbow redesign project.
+
+float target = 0;
+float angle = 0;
+float increment = 0;
+
+int zeroPadding(float angle){
+     if (angle>=0) {
+     if (angle<100) Serial.print('0');
+      if (angle<10) Serial.print('0');
+      Serial.println(angle);
+    } else {
+      if (angle>-100) Serial.print('-'); // Note that any angles < -100, will display as positive.
+      if (angle>-10) Serial.print('0');
+      Serial.println(angle * (-1));  
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  target = random(-40, 115);
+}
+void loop() {
+
+increment = random(1,10);
+increment = increment / 100;
+
+if (angle > target-0.1 and angle < target+0.1) {
+  target = random(-40, 115);
+}
+
+if (angle < target) {
+  angle = angle + increment;
+ zeroPadding(angle);
+  delay(10);
+}
+
+if (angle > target) {
+  angle = angle - increment;
+     zeroPadding(angle);
+  delay(10);
+ }
+}
