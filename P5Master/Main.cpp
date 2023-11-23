@@ -4,9 +4,19 @@
 // This version is by Hector Fabricius
 
 #include "serialFunctions.h"
+#include <iostream>
 
 int main() {
 
- receiveSerial(11); //Change COMM port here
+ connectSerial(11); //Change COMM port here
 
+   std::cout << "beef" << std::endl;
+
+    while(true) // The main loop
+    {
+      //  std::cout << getAngle << std::endl;
+    }
+
+
+  return 0;
 }
