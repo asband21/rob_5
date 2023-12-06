@@ -1,7 +1,7 @@
 
 int moter_a[] = {9,10};
 int tel = 0;
-int cp_has = 0;
+int cp_has = 100;
 bool brems = false;
 int ret = 1;
 
@@ -12,6 +12,7 @@ void setup() {
   digitalWrite(moter_a[0], LOW);
   digitalWrite(moter_a[1], LOW);
   Serial.begin(9600);
+  Serial.print("staeter");
 
 }
 void koer(int hasj) // 0 er brams
@@ -53,7 +54,6 @@ void koer(int hasj) // 0 er brams
 
 void frem_og_tilbage()
 {
-  delay(20);
   Serial.println(tel);
   tel += ret;
   koer(0);
@@ -67,8 +67,7 @@ void pc_has()
   if(Serial.available() > 0)
   {
     cp_has = Serial.parseInt();
-    Serial.print(cp_has);
-    Serial.println(" vinkel");
+    Serial.println(cp_has);
   }
   koer(cp_has);
 }
