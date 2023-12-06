@@ -1,8 +1,10 @@
 
 int moter_a[] = {9,10};
 int tel = 0;
+int cp_has = 0;
 bool brems = false;
 int ret = 1;
+
 void setup() {
   // Initialize digital pin 3 as an output.
   pinMode(moter_a[0], OUTPUT);
@@ -49,12 +51,29 @@ void koer(int hasj) // 0 er brams
   }
 }
 
-void loop()
+void frem_og_tilbage()
 {
   delay(20);
   Serial.println(tel);
   tel += ret;
-  koer(tel);
+  koer(0);
   if(tel > 300 || tel < -300)
     ret = -1*ret;
+  
+}
+
+void pc_has()
+{
+  if(Serial.available() > 0)
+  {
+    cp_has = Serial.parseInt();
+    Serial.print(cp_has);
+    Serial.println(" vinkel");
+  }
+  koer(cp_has);
+}
+void loop()
+{
+  //frem_og_tilbage();
+  pc_has();
 }
