@@ -38,11 +38,7 @@ int set_interface_attribs(int fd, int speed)
 	}
 	return 0;
 }
-
-int main()
-{
-	int n = 0;
-	//char buf[256];
+int main() {
 	char portName[100] = "/dev/ttyACM0"; // Set default port
 	printf("Enter the serial port (default /dev/ttyACM0): ");
 	fgets(portName, sizeof(portName), stdin);
@@ -65,31 +61,32 @@ int main()
 	}
 	set_interface_attribs(fd, B9600);
 
-	while(1)
+	while (1)
 	{
-
 		// Send a new rate to the Arduino
 		char input[256];
 		printf("Enter new blink rate in milliseconds: ");
-		scanf("%255s", input);
+		fgets(input, sizeof(input), stdin);
+		input[strcspn(input, "\n")] = 0; // Remove newline character
 		write(fd, input, strlen(input));
 
+		usleep(10000); // Wait for 10 milliseconds
+
+		tcflush(fd, TCIFLUSH); // Flush input buffer to remove stale data
+
 		// Read confirmation from Arduino
-		/*
-		n = read(fd, buf, sizeof(buf) - 1);
-		if (n > 0) {
-			buf[n] = 0; // Null terminate
-			printf("Confirmation from Arduino: %s\n", buf);
-		}*/
-
-		// Read the initial blink rate from Arduino
 		char buf[256];
-		int n = read(fd, buf, sizeof(buf) - 1);
-		if (n > 0) {
-			buf[n] = 0; // Null terminate
-			printf("Current blink rate from Arduino: %s\n", buf);
-		}
+		int n;
+		int total_read = 0;
 
+		// Read until we get a newline
+		do {
+			n = read(fd, buf + total_read, sizeof(buf) - 1 - total_read);
+			if (n > 0) total_read += n;
+		} while (buf[total_read-1] != '\n' && total_read < sizeof(buf) - 1);
+
+		buf[total_read] = 0; // Null terminate
+		printf("Current blink rate from Arduino: %s", buf); // buf already contains newline
 	}
 
 	close(fd);
