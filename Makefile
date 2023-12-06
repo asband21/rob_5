@@ -1,14 +1,14 @@
 # Makefile for Integrated C++ Program
 
 # Compiler settings
-CXX = g++
-CXXFLAGS = -Wall -std=c++11
+CXX = gcc
+CXXFLAGS = -Wall 
 
 # Target binary
 TARGET = tutel
 
 # Source files
-SOURCES = tutel.cpp 
+SOURCES = tutel.c 
 
 # Object files
 OBJECTS = $(SOURCES:.cpp=.o)
@@ -21,7 +21,7 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) -lpthread
 
 # Compile the source files into object files
-%.o: %.cpp
+%.o: %.c
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Clean up
