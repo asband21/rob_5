@@ -7,6 +7,10 @@
 #include <unistd.h>
 #include <termios.h>
 #include <errno.h>
+#include <time.h>
+#include <unistd.h>
+#include <stdint.h>
+#include "rull.h"
 
 volatile int sharedInt = 0;  // Shared variable for the input value
 volatile int sharedpwm = 0;  // Shared variable for the input value
@@ -73,16 +77,67 @@ int get_serial_port(char *portName, char * enhed, char *standart)
 	return fd;
 }
 
-void kontroller(double err)
+
+rolling_average *ra = NULL;
+double gammel_vinkrl = 0;
+double gammel_err = 0;
+struct timespec tid_ny, tid_gammel;
+
+double faa_tids_delta()
 {
-	sharedpwm = (int)(err*2);
-	printf("error %d ønsked vinkel %d \n",(int)err, sharedInt );
+	clock_gettime(CLOCK_REALTIME, &tid_ny);
+	long tid_delta = tid_ny.tv_nsec - tid_gammel.tv_nsec;
+	tid_gammel = tid_ny;
+	if(tid_delta < 0)
+	{
+		tid_delta = tid_delta + 1000000000;
+		//printf("%ld\n",tid_delta);
+	}
+	return tid_delta;
+}
+
+double faa_vinkel_hastihed(double vinkel)
+{
+	double delta_vinkel = vinkel - gammel_vinkrl;
+	gammel_vinkrl = vinkel;
+	double tid_delta = faa_tids_delta();
+	return add_value_get_average(ra,delta_vinkel/(tid_delta/1000000000));
+}
+
+double clamp(double value, double min, double max) {
+    if(value < min)
+	    return min;
+    if(value > max)
+	    return max;
+    return value;
+}
+
+
+double faa_error_hastihed(double err)
+{
+	double delta_vinkel = err - gammel_err;
+	gammel_err = err;
+	double tid_delta = faa_tids_delta();
+	return delta_vinkel/(tid_delta/1000000000); 
+}
+void kontroller(double vinkel)
+{
+
+	double hastihed = faa_vinkel_hastihed(vinkel);
+	double err = clamp(sharedInt - vinkel,-50,50);
+	//double err_hastihed = faa_error_hastihed(err);
+	//double hastihed_err = clamp(hastihed-hastihed_err,-100,100);
+	sharedpwm = (int)(err);
+	printf("vinkel\t%f\terror\t%f\tønsked vinkel\t%d\thastihed\t%f\n",vinkel,err, sharedInt,hastihed);
+	//printf("error %d\tønsked vinkel\t%d\tdelta vinkel\t%f\ttid delta\t%f\n",(int)err, sharedInt, delta_vinkel, tid_delta);
 }
 
 void* vinkeThreadFunc(void* arg)
 {
 	int fd = ((ThreadArgs*)arg)->fd;
 	set_interface_attribs(fd, B9600);
+	if(ra == NULL)
+		ra = init_rolling_average(50);
 
 	while (1)
 	{
@@ -104,7 +159,7 @@ void* vinkeThreadFunc(void* arg)
 		if ( !(endPtr == buf || errno != 0 ))
 		{
 			//printf("error er: %f\n", sharedInt-value);
-			kontroller((float)sharedInt-value);
+			kontroller(value);
 		}
 		else
 			printf(":(");
@@ -127,7 +182,10 @@ void* inputThreadFunc(void* arg)
             long value = strtol(input, &endPtr, 10);
             // Check if the conversion was successful and if the whole input is a number
             if (endPtr != input && (*endPtr == '\n' || *endPtr == '\0'))
-                sharedInt = (int)value;
+	    {
+
+                sharedInt = (int)clamp(value,0,115);
+	    }
 	    else
                 printf("Invalid input ignored.\n");
         }
@@ -145,8 +203,7 @@ void skriv_til_moter_bloker(int fd)
 		sprintf(input, "%d", sharedpwm-255);
 		//printf("%s\n",input);
 		write(fd, input, strlen(input));
-
-		usleep(10000); // Wait for 10 milliseconds
+		usleep(5000); // Wait for 10 milliseconds
 		//
 
 		tcflush(fd, TCIFLUSH); // Flush input buffer to remove stale data

@@ -2,7 +2,7 @@
 
 # Compiler settings
 CXX = gcc
-CXXFLAGS = -Wall 
+CXXFLAGS = -Wall -O2 
 
 # Target binary
 TARGET = tutel
