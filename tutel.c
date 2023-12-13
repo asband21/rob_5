@@ -75,7 +75,8 @@ int get_serial_port(char *portName, char * enhed, char *standart)
 
 void kontroller(double err)
 {
-	sharedpwm = (int)err;
+	sharedpwm = (int)(err*2);
+	printf("error %d ønsked vinkel %d \n",(int)err, sharedInt );
 }
 
 void* vinkeThreadFunc(void* arg)
@@ -102,7 +103,7 @@ void* vinkeThreadFunc(void* arg)
 
 		if ( !(endPtr == buf || errno != 0 ))
 		{
-			printf("error er: %f\n", sharedInt-value);
+			//printf("error er: %f\n", sharedInt-value);
 			kontroller((float)sharedInt-value);
 		}
 		else
@@ -141,13 +142,16 @@ void skriv_til_moter_bloker(int fd)
 	while (1)
 	{
 		char input[256];
-		sprintf(input, "%d", sharedpwm);
+		sprintf(input, "%d", sharedpwm-255);
+		//printf("%s\n",input);
 		write(fd, input, strlen(input));
 
-		usleep(1000); // Wait for 10 milliseconds
+		usleep(10000); // Wait for 10 milliseconds
+		//
 
 		tcflush(fd, TCIFLUSH); // Flush input buffer to remove stale data
 
+		/*
 		// Read confirmation from Arduino
 		char buf[256];
 		int n;
@@ -161,6 +165,7 @@ void skriv_til_moter_bloker(int fd)
 
 		buf[total_read] = 0; // Null terminate
 		printf(" PPM Pulsus with:%s", buf); // buf already contains newline
+		*/
 	}
 	close(fd);
 }

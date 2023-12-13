@@ -67,8 +67,7 @@ void pc_has()
   if(Serial.available() > 0)
   {
     cp_has = Serial.parseInt();
-    cp_has = cp_has + 255;
-    //Serial.println(cp_has);
+    Serial.println(cp_has);
   }
   koer(cp_has);
 }
