@@ -124,11 +124,12 @@ void kontroller(double vinkel)
 {
 
 	double hastihed = faa_vinkel_hastihed(vinkel);
-	double err = clamp(sharedInt - vinkel,-50,50);
+	//double err = clamp(sharedInt - vinkel,-50,50);
+	double err = clamp(sharedInt - vinkel,-200,200);
 	//double err_hastihed = faa_error_hastihed(err);
 	//double hastihed_err = clamp(hastihed-hastihed_err,-100,100);
-	sharedpwm = (int)(err);
-	printf("vinkel\t%f\terror\t%f\tønsked vinkel\t%d\thastihed\t%f\n",vinkel,err, sharedInt,hastihed);
+	sharedpwm = (int)clamp(err-hastihed,-70,70);
+	printf("vinkel\t%f\terror\t%f\tønsked vinkel\t%d\thastihed\t%f\tshardpwm\t%d\n",vinkel,err, sharedInt,hastihed,sharedpwm);
 	//printf("error %d\tønsked vinkel\t%d\tdelta vinkel\t%f\ttid delta\t%f\n",(int)err, sharedInt, delta_vinkel, tid_delta);
 }
 
@@ -145,7 +146,8 @@ void* vinkeThreadFunc(void* arg)
 		int n;
 		int total_read = 0;
 
-		do {
+		do 
+		{
 			n = read(fd, buf + total_read, sizeof(buf) - 1 - total_read);
 			if (n > 0) total_read += n;
 		} while (buf[total_read-1] != '\n' && total_read < sizeof(buf) - 1);
