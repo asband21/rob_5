@@ -10,6 +10,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <math.h>
 #include "rull.h"
 #include "PID_regulering.h"
 
@@ -153,7 +154,7 @@ void* vinkeThreadFunc(void* arg)
 {
 	int fd = ((ThreadArgs*)arg)->fd;
 	set_interface_attribs(fd, B9600);
-	initPID(&pid, 1.2, 0.511, 0.1, -250, 250);
+	initPID(&pid, 0.8, 0.911, 0.1, -150, 150);
 	ra = init_rolling_average(10);
 
 
@@ -187,6 +188,20 @@ void* vinkeThreadFunc(void* arg)
 	close(fd);
 }
 
+
+void* sin_beveag()
+{       
+	const double maxAmplitude = 100.0; // Peak value
+        const double period = 10.0; // Time for one cycle (peak to peak) in seconds
+        const double pi = acos(-1.0); // Pi constant
+        const int stepsPerSecond = 10; // Resolution: number of steps per
+        for (int t = 0; ; ++t)
+	{
+                double time = (double)t / stepsPerSecond;
+                sharedInt = (int)(maxAmplitude * (sin(2 * pi * time / period) / 2.0 + 0.5)) + 5;
+                usleep(1000000 / stepsPerSecond); // Wait for the next step (in microseconds)
+        }  
+}
 
 void* inputThreadFunc(void* arg)
 {
@@ -255,7 +270,8 @@ int main()
 
 	pthread_t inputThread;
 	// Create a new thread for input
-	if (pthread_create(&inputThread, NULL, inputThreadFunc, NULL))
+	//if (pthread_create(&inputThread, NULL, inputThreadFunc, NULL))
+	if (pthread_create(&inputThread, NULL, sin_beveag, NULL))
 	{
 		fprintf(stderr, "Error creating thread\n");
 		return 1;

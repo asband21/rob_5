@@ -18,7 +18,7 @@ all: $(TARGET)
 
 # Link the target binary
 $(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) -lpthread
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) -lpthread -lm
 
 # Compile the source files into object files
 %.o: %.c
