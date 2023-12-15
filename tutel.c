@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "rull.h"
+#include "PID_regulering.h"
+
 
 volatile int sharedInt = 0;  // Shared variable of the desired angle position
 volatile int sharedpwm = 0;  // Shared variable for the input value
@@ -79,9 +81,13 @@ int get_serial_port(char *portName, char * enhed, char *standart)
 
 
 rolling_average *ra = NULL;
+PIDController pid;
 double gammel_vinkrl = 0;
 double gammel_err = 0;
 struct timespec tid_ny, tid_gammel;
+
+
+
 
 double faa_tids_delta()
 {
@@ -126,25 +132,30 @@ double faa_error_hastihed(double err)
 	return delta_vinkel/(tid_delta/1000000000); 
 } 
 
-// Control system established on angular velocity
+
 void kontroller(double vinkel)
 {
-	double hastihed = faa_vinkel_hastihed(vinkel);
-	//double err = clamp(sharedInt - vinkel,-50,50);
-	double err = clamp(sharedInt - vinkel,-200,200);
+	//double hastihed = faa_vinkel_hastihed(vinkel);
+	//double err = clamp(sharedInt - vinkel,-200,200);
 	//double err_hastihed = faa_error_hastihed(err);
 	//double hastihed_err = clamp(hastihed-hastihed_err,-100,100);
-	sharedpwm = (int)clamp(err-hastihed,-70,70);
-	printf("vinkel\t%f\terror\t%f\tønsked vinkel\t%d\thastihed\t%f\tshardpwm\t%d\n",vinkel,err, sharedInt,hastihed,sharedpwm);
+	//sharedpwm = (int)clamp(err-hastihed*0.2,-100,100);
+	//sharedpwm = (int)clamp(err,-100,100);
 	//printf("error %d\tønsked vinkel\t%d\tdelta vinkel\t%f\ttid delta\t%f\n",(int)err, sharedInt, delta_vinkel, tid_delta);
+	
+	double err_lok = (sharedInt - vinkel);
+	double tid_del = faa_tids_delta()/1000000000;
+	sharedpwm = (int)(updatePID(&pid, (double)sharedInt, vinkel, tid_del));
+	printf("vinkel\t%f\terror\t%f\tønsked vinkel\t%d\tshardpwm\t%d\ttid delat\t%f\n",vinkel,err_lok, sharedInt,sharedpwm,tid_del);
 }
 
 void* vinkeThreadFunc(void* arg)
 {
 	int fd = ((ThreadArgs*)arg)->fd;
 	set_interface_attribs(fd, B9600);
-	if(ra == NULL)
-		ra = init_rolling_average(50);
+	initPID(&pid, 1.2, 0.511, 0.1, -250, 250);
+	ra = init_rolling_average(10);
+
 
 	while (1)
 	{
