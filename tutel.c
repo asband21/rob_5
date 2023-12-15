@@ -12,9 +12,9 @@
 #include <stdint.h>
 #include "rull.h"
 
-volatile int sharedInt = 0;  // Shared variable for the input value
+volatile int sharedInt = 0;  // Shared variable of the desired angle position
 volatile int sharedpwm = 0;  // Shared variable for the input value
-volatile double error = 0;  // Shared variable for the input value
+volatile double error = 0;   // Shared variable for the input value
 
 typedef struct {
     int fd;
@@ -87,7 +87,10 @@ double faa_tids_delta()
 {
 	clock_gettime(CLOCK_REALTIME, &tid_ny);
 	long tid_delta = tid_ny.tv_nsec - tid_gammel.tv_nsec;
-	tid_gammel = tid_ny;
+	tid_gammel = tid_ny; 
+
+	//The system has an x timestamp which restest. the system therefore has be compensated by adding 1000000000 
+		//else it would have found a huge error between delta time (tid_delta)
 	if(tid_delta < 0)
 	{
 		tid_delta = tid_delta + 1000000000;
@@ -96,6 +99,7 @@ double faa_tids_delta()
 	return tid_delta;
 }
 
+// Gets the angle velocity by dividing the angle with the time
 double faa_vinkel_hastihed(double vinkel)
 {
 	double delta_vinkel = vinkel - gammel_vinkrl;
@@ -104,6 +108,7 @@ double faa_vinkel_hastihed(double vinkel)
 	return add_value_get_average(ra,delta_vinkel/(tid_delta/1000000000));
 }
 
+//establishes a value with its maximum and minimum limitations as an all-purpose clamp function
 double clamp(double value, double min, double max) {
     if(value < min)
 	    return min;
@@ -112,17 +117,18 @@ double clamp(double value, double min, double max) {
     return value;
 }
 
-
+// Computes the difference between practical and theoretical angular velocity 
 double faa_error_hastihed(double err)
 {
 	double delta_vinkel = err - gammel_err;
 	gammel_err = err;
 	double tid_delta = faa_tids_delta();
 	return delta_vinkel/(tid_delta/1000000000); 
-}
+} 
+
+// Control system established on angular velocity
 void kontroller(double vinkel)
 {
-
 	double hastihed = faa_vinkel_hastihed(vinkel);
 	//double err = clamp(sharedInt - vinkel,-50,50);
 	double err = clamp(sharedInt - vinkel,-200,200);
