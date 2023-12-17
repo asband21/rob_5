@@ -14,7 +14,6 @@
 #include "rull.h"
 #include "PID_regulering.h"
 
-
 volatile int sharedInt = 0;  // Shared variable of the desired angle position
 volatile int sharedpwm = 0;  // Shared variable for the input value
 volatile double error = 0;   // Shared variable for the input value
@@ -80,15 +79,11 @@ int get_serial_port(char *portName, char * enhed, char *standart)
 	return fd;
 }
 
-
 rolling_average *ra = NULL;
 PIDController pid;
 double gammel_vinkrl = 0;
 double gammel_err = 0;
 struct timespec tid_ny, tid_gammel;
-
-
-
 
 double faa_tids_delta()
 {
@@ -132,30 +127,36 @@ double faa_error_hastihed(double err)
 	double tid_delta = faa_tids_delta();
 	return delta_vinkel/(tid_delta/1000000000); 
 } 
-
-
 void kontroller(double vinkel)
 {
-	//double hastihed = faa_vinkel_hastihed(vinkel);
-	//double err = clamp(sharedInt - vinkel,-200,200);
-	//double err_hastihed = faa_error_hastihed(err);
-	//double hastihed_err = clamp(hastihed-hastihed_err,-100,100);
-	//sharedpwm = (int)clamp(err-hastihed*0.2,-100,100);
-	//sharedpwm = (int)clamp(err,-100,100);
-	//printf("error %d\tønsked vinkel\t%d\tdelta vinkel\t%f\ttid delta\t%f\n",(int)err, sharedInt, delta_vinkel, tid_delta);
-	
 	double err_lok = (sharedInt - vinkel);
 	double tid_del = faa_tids_delta()/1000000000;
 	sharedpwm = (int)(updatePID(&pid, (double)sharedInt, vinkel, tid_del));
 	printf("vinkel\t%f\terror\t%f\tønsked vinkel\t%d\tshardpwm\t%d\ttid delat\t%f\n",vinkel,err_lok, sharedInt,sharedpwm,tid_del);
 }
 
+void ned_telle(int sek)
+{
+	for(int i = 0; i < sek; i++)
+	{
+		printf("starter om %d sek\n", sek-i);
+		usleep(1000000);
+	}
+}
+
 void* vinkeThreadFunc(void* arg)
 {
 	int fd = ((ThreadArgs*)arg)->fd;
 	set_interface_attribs(fd, B9600);
-	initPID(&pid, 0.8, 0.911, 0.1, -150, 150);
+	double p = 5.5;
+	double i = 0.711;
+	double d = 0.00;
+	double min = -255;
+	double max = 255;
+	initPID(&pid, p, i ,d, min , max);
+	printf("p\t%f\ti\t%f\td\t%f\tmin\t%f\tmax\t%f\n", p, i ,d, min , max);
 	ra = init_rolling_average(10);
+	ned_telle(10);
 
 
 	while (1)
@@ -216,10 +217,7 @@ void* inputThreadFunc(void* arg)
             long value = strtol(input, &endPtr, 10);
             // Check if the conversion was successful and if the whole input is a number
             if (endPtr != input && (*endPtr == '\n' || *endPtr == '\0'))
-	    {
-
                 sharedInt = (int)clamp(value,0,115);
-	    }
 	    else
                 printf("Invalid input ignored.\n");
         }
@@ -238,25 +236,7 @@ void skriv_til_moter_bloker(int fd)
 		//printf("%s\n",input);
 		write(fd, input, strlen(input));
 		usleep(5000); // Wait for 10 milliseconds
-		//
-
 		tcflush(fd, TCIFLUSH); // Flush input buffer to remove stale data
-
-		/*
-		// Read confirmation from Arduino
-		char buf[256];
-		int n;
-		int total_read = 0;
-
-		// Read until we get a newline
-		do {
-			n = read(fd, buf + total_read, sizeof(buf) - 1 - total_read);
-			if (n > 0) total_read += n;
-		} while (buf[total_read-1] != '\n' && total_read < sizeof(buf) - 1);
-
-		buf[total_read] = 0; // Null terminate
-		printf(" PPM Pulsus with:%s", buf); // buf already contains newline
-		*/
 	}
 	close(fd);
 }
@@ -267,9 +247,7 @@ int main()
 	int fd_moter = get_serial_port(portName, "morteren", "/dev/ttyACM0");
 	int fd_vinke = get_serial_port(portName, "vinke", "/dev/ttyACM1");
 
-
 	pthread_t inputThread;
-	// Create a new thread for input
 	//if (pthread_create(&inputThread, NULL, inputThreadFunc, NULL))
 	if (pthread_create(&inputThread, NULL, sin_beveag, NULL))
 	{
@@ -292,5 +270,3 @@ int main()
 	
 	return 0;
 }
-
-
